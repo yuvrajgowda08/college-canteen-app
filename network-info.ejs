@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Information</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .info-box { background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 10px 0; }
+        .url { background: #e9ecef; padding: 10px; border-radius: 5px; font-family: monospace; }
+        .qr-code { text-align: center; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>🌐 College Canteen - Network Access</h1>
+    
+    <div class="info-box">
+        <h2>Share these URLs with other devices:</h2>
+        
+        <h3>Local Access:</h3>
+        <div class="url">http://localhost:3000</div>
+        
+        <h3>Network Access:</h3>
+        <div class="url" id="networkUrl">Loading...</div>
+        
+        <h3>Instructions:</h3>
+        <ol>
+            <li>Make sure all devices are connected to the same WiFi network</li>
+            <li>Share the Network URL above with other devices</li>
+            <li>Open the URL in any web browser (Chrome, Safari, etc.)</li>
+            <li>Use the demo accounts to test multiple users</li>
+        </ol>
+    </div>
+
+    <script>
+        // Get the current hostname and port
+        const networkUrl = `http://${window.location.hostname}:3000`;
+        document.getElementById('networkUrl').textContent = networkUrl;
+        
+        // Copy to clipboard function
+        function copyUrl() {
+            navigator.clipboard.writeText(networkUrl);
+            alert('URL copied to clipboard!');
+        }
+    </script>
+    
+    <button onclick="copyUrl()">Copy Network URL</button>
+</body>
+</html>

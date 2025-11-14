@@ -1,0 +1,30 @@
+{
+  "name": "college-canteen-app",
+  "version": "1.0.0",
+  "description": "College Canteen Food Ordering System with Multi-Device Support",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node app.js",
+    "multi-device": "node app.js"
+  },
+  "keywords": [
+    "canteen",
+    "food-ordering",
+    "college",
+    "express",
+    "multi-device"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.2",
+    "path": "^0.12.7"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

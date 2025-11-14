@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Canteen - Admin Panel</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>College Canteen - Admin Panel</h1>
+            <nav>
+                <span>Welcome, <%= user.username %>! (Admin)</span>
+                <a href="/menu" class="btn btn-secondary">View Menu</a>
+                <a href="/logout" class="btn">Logout</a>
+            </nav>
+        </div>
+    </header>
+    
+    <main class="container">
+        <h2>Order Management</h2>
+        
+        <div id="adminMessage" class="alert" style="display: none;"></div>
+        
+        <div class="orders-list">
+            <% if (orders.length === 0) { %>
+                <p>No orders found.</p>
+            <% } else { %>
+                <% orders.forEach(order => { %>
+                    <div class="order-card" data-order-id="<%= order.id %>">
+                        <div class="order-header">
+                            <h3>Order #<%= order.id %> - <%= order.username %></h3>
+                            <span class="order-date"><%= order.order_date.toLocaleString() %></span>
+                        </div>
+                        <div class="order-details">
+                            <p><strong>Total:</strong> ₹<%= order.total_amount %></p>
+                            <div class="status-controls">
+                                <label for="status-<%= order.id %>">Status:</label>
+                                <select id="status-<%= order.id %>" class="status-select">
+                                    <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                                    <option value="confirmed" <%= order.status === 'confirmed' ? 'selected' : '' %>>Confirmed</option>
+                                    <option value="preparing" <%= order.status === 'preparing' ? 'selected' : '' %>>Preparing</option>
+                                    <option value="ready" <%= order.status === 'ready' ? 'selected' : '' %>>Ready</option>
+                                    <option value="completed" <%= order.status === 'completed' ? 'selected' : '' %>>Completed</option>
+                                </select>
+                                <button type="button" class="btn" onclick="updateOrderStatus(<%= order.id %>)">Update Status</button>
+                            </div>
+                            <div class="current-status">
+                                <strong>Current Status:</strong> 
+                                <span class="status-badge status-<%= order.status %>"><%= order.status %></span>
+                            </div>
+                        </div>
+                        <div class="order-items">
+                            <h4>Order Items:</h4>
+                            <% order.items.forEach(item => { %>
+                                <div class="order-item">
+                                    <span class="item-name"><%= item.quantity %> x <%= item.name %></span>
+                                    <span class="item-price">₹<%= item.total %></span>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } %>
+        </div>
+    </main>
+
+    <script>
+        function updateOrderStatus(orderId) {
+            const selectElement = document.getElementById('status-' + orderId);
+            const status = selectElement.value;
+            const updateButton = event.target;
+            
+            // Show loading state
+            const originalText = updateButton.textContent;
+            updateButton.textContent = 'Updating...';
+            updateButton.disabled = true;
+            
+            fetch('/admin/update-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    orderId: orderId, 
+                    status: status 
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('✅ Order status updated successfully!', 'success');
+                    
+                    // Update the status badge immediately
+                    const statusBadge = document.querySelector(`[data-order-id="${orderId}"] .status-badge`);
+                    statusBadge.textContent = status;
+                    statusBadge.className = `status-badge status-${status}`;
+                    
+                    // Visual feedback
+                    const orderCard = document.querySelector(`[data-order-id="${orderId}"]`);
+                    orderCard.classList.add('status-updated');
+                    
+                    setTimeout(() => {
+                        orderCard.classList.remove('status-updated');
+                    }, 2000);
+                    
+                } else {
+                    showMessage('❌ Failed to update: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('❌ Network error. Please try again.', 'error');
+            })
+            .finally(() => {
+                // Restore button state
+                updateButton.textContent = originalText;
+                updateButton.disabled = false;
+            });
+        }
+        
+        function showMessage(message, type) {
+            const messageEl = document.getElementById('adminMessage');
+            messageEl.textContent = message;
+            messageEl.className = `alert ${type}`;
+            messageEl.style.display = 'block';
+            
+            // Auto-hide success messages after 3 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageEl.style.display = 'none';
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>

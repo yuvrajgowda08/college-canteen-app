@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Canteen - My Profile</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>College Canteen</h1>
+            <nav>
+                <span>Welcome, <%= user.username %>!</span>
+                <a href="/menu" class="btn btn-secondary">Order Food</a>
+                <a href="/my-orders" class="btn btn-secondary">My Orders</a>
+                <a href="/logout" class="btn">Logout</a>
+            </nav>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div class="profile-container">
+            <div class="profile-header">
+                <h2>My Profile</h2>
+                <span class="user-badge">👤 <%= user.role === 'admin' ? 'Administrator' : 'Student' %></span>
+            </div>
+            
+            <div class="profile-info">
+                <div class="info-card">
+                    <h4>Username</h4>
+                    <p><%= user.username %></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Email</h4>
+                    <p><%= user.email %></p>
+                </div>
+                
+                <% if (user.fullname) { %>
+                <div class="info-card">
+                    <h4>Full Name</h4>
+                    <p><%= user.fullname %></p>
+                </div>
+                <% } %>
+                
+                <div class="info-card">
+                    <h4>Member Since</h4>
+                    <p>
+                        <% if (user.created_at && user.created_at.toLocaleDateString) { %>
+                            <%= user.created_at.toLocaleDateString() %>
+                        <% } else { %>
+                            Recently joined
+                        <% } %>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number"><%= orders.length %></span>
+                    <span class="stat-label">Total Orders</span>
+                </div>
+                
+                <div class="stat-item">
+                    <span class="stat-number"><%= orders.filter(o => o.status === 'completed').length %></span>
+                    <span class="stat-label">Completed Orders</span>
+                </div>
+                
+                <div class="stat-item">
+                    <span class="stat-number">₹<%= orders.reduce((total, order) => total + order.total_amount, 0) %></span>
+                    <span class="stat-label">Total Spent</span>
+                </div>
+                
+                <div class="stat-item">
+                    <span class="stat-number"><%= orders.filter(o => o.status === 'pending' || o.status === 'confirmed' || o.status === 'preparing').length %></span>
+                    <span class="stat-label">Active Orders</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recent-orders">
+            <h3>Recent Orders</h3>
+            <% if (orders.length === 0) { %>
+                <p>You haven't placed any orders yet.</p>
+                <a href="/menu" class="btn btn-primary">Place Your First Order</a>
+            <% } else { %>
+                <div class="orders-list">
+                    <% orders.slice(0, 5).forEach(order => { %>
+                        <div class="order-card">
+                            <div class="order-header">
+                                <h4>Order #<%= order.id %></h4>
+                                <span class="status-badge status-<%= order.status %>"><%= order.status %></span>
+                            </div>
+                            <div class="order-details">
+                                <p><strong>Total:</strong> ₹<%= order.total_amount %></p>
+                                <p><strong>Date:</strong> 
+                                    <% if (order.order_date && order.order_date.toLocaleString) { %>
+                                        <%= order.order_date.toLocaleString() %>
+                                    <% } else { %>
+                                        Recent order
+                                    <% } %>
+                                </p>
+                                <p><strong>Items:</strong> <%= order.items.length %> items</p>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+                <% if (orders.length > 5) { %>
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <a href="/my-orders" class="btn">View All Orders</a>
+                    </div>
+                <% } %>
+            <% } %>
+        </div>
+    </main>
+</body>
+</html>

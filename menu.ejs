@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Canteen - Menu</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>College Canteen</h1>
+            <nav>
+    <span>Welcome, <%= user.username %>!</span>
+    <a href="/profile" class="btn btn-secondary">My Profile</a>
+    <a href="/my-orders" class="btn btn-secondary">My Orders</a>
+    <% if (user.role === 'admin') { %>
+        <a href="/admin" class="btn btn-secondary">Admin Panel</a>
+    <% } %>
+    <a href="/logout" class="btn">Logout</a>
+</nav>
+        </div>
+    </header>
+    
+    <main class="container">
+        <h2>Today's Menu</h2>
+        
+        <form id="orderForm">
+            <% for (const category in menu) { %>
+                <div class="category-section">
+                    <h3><%= category %></h3>
+                    <div class="menu-grid">
+                        <% menu[category].forEach(item => { %>
+                            <div class="menu-item">
+                                <div class="item-info">
+                                    <h4><%= item.name %></h4>
+                                    <p><%= item.description %></p>
+                                    <span class="price">₹<%= item.price %></span>
+                                </div>
+                                <div class="item-controls">
+                                    <button type="button" class="qty-btn" onclick="updateQuantity(<%= item.id %>, -1)">-</button>
+                                    <input type="number" id="qty-<%= item.id %>" name="items[<%= item.id %>]" value="0" min="0" readonly>
+                                    <button type="button" class="qty-btn" onclick="updateQuantity(<%= item.id %>, 1)">+</button>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            <% } %>
+            
+            <div class="order-summary">
+                <h3>Order Summary</h3>
+                <div id="summaryItems"></div>
+                <div class="total">Total: ₹<span id="totalAmount">0.00</span></div>
+                <button type="submit" class="btn btn-primary">Place Order</button>
+            </div>
+        </form>
+        
+        <div id="orderMessage" class="alert" style="display: none;"></div>
+    </main>
+    
+    <script>
+        function updateQuantity(itemId, change) {
+            const input = document.getElementById('qty-' + itemId);
+            let currentValue = parseInt(input.value);
+            currentValue += change;
+            
+            if (currentValue < 0) currentValue = 0;
+            input.value = currentValue;
+            
+            updateOrderSummary();
+        }
+        
+        function updateOrderSummary() {
+            const formData = new FormData(document.getElementById('orderForm'));
+            const items = Object.fromEntries(formData.entries());
+            let total = 0;
+            let summaryHTML = '';
+            let hasItems = false;
+            
+            // This would normally calculate based on actual prices
+            // For demo, we're using a simplified approach
+            for (const itemId in items) {
+                const quantity = parseInt(items[itemId]);
+                if (quantity > 0) {
+                    // In a real app, you'd get the price from a data attribute
+                    const price = 50; // Placeholder - should get actual price
+                    const itemTotal = price * quantity;
+                    total += itemTotal;
+                    
+                    summaryHTML += `<div class="summary-item">Item ${itemId}: ${quantity} x ₹${price} = ₹${itemTotal}</div>`;
+                    hasItems = true;
+                }
+            }
+            
+            if (!hasItems) {
+                summaryHTML = '<p class="empty-cart">Your cart is empty</p>';
+            }
+            
+            document.getElementById('summaryItems').innerHTML = summaryHTML;
+            document.getElementById('totalAmount').textContent = total.toFixed(2);
+        }
+        
+        document.getElementById('orderForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const items = {};
+            
+            for (const [key, value] of formData.entries()) {
+                if (key.startsWith('items[')) {
+                    const itemId = key.match(/\[(.*?)\]/)[1];
+                    items[itemId] = parseInt(value);
+                }
+            }
+            
+            fetch('/order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ items: items }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const messageEl = document.getElementById('orderMessage');
+                if (data.success) {
+                    messageEl.textContent = 'Order placed successfully! Order ID: ' + data.orderId;
+                    messageEl.className = 'alert success';
+                    document.getElementById('orderForm').reset();
+                    updateOrderSummary();
+                } else {
+                    messageEl.textContent = data.error || 'Failed to place order. Please try again.';
+                    messageEl.className = 'alert error';
+                }
+                messageEl.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+        
+        // Initial summary update
+        updateOrderSummary();
+    </script>
+</body>
+</html>

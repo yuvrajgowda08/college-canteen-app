@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Canteen - Login & Register</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <div class="app-header">
+            <h1>🍽️ College Canteen</h1>
+            <p class="app-subtitle">Order your favorite food online</p>
+        </div>
+        
+        <% if (error) { %>
+            <div class="alert error"><%= error %></div>
+        <% } %>
+        
+        <% if (success) { %>
+            <div class="alert success"><%= success %></div>
+        <% } %>
+        
+        <div class="form-tabs">
+            <button class="tab-button active" onclick="showTab('login')">Login</button>
+            <button class="tab-button" onclick="showTab('register')">Register</button>
+        </div>
+        
+        <!-- Login Form -->
+        <form id="loginForm" action="/login" method="POST" class="form active">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required placeholder="Enter your username">
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        
+        <!-- Registration Form -->
+        <form id="registerForm" action="/register" method="POST" class="form">
+            <div class="form-group">
+                <label for="reg_fullname">Full Name:</label>
+                <input type="text" id="reg_fullname" name="fullname" required placeholder="Enter your full name">
+            </div>
+            <div class="form-group">
+                <label for="reg_username">Username:</label>
+                <input type="text" id="reg_username" name="username" required placeholder="Choose a username (3-20 characters)" 
+                       onkeyup="validateUsernameField()">
+                <small class="field-hint">Letters, numbers, and underscores only</small>
+                <div id="usernameFeedback" class="field-feedback"></div>
+            </div>
+            <div class="form-group">
+                <label for="reg_email">Email:</label>
+                <input type="email" id="reg_email" name="email" required placeholder="Enter your email address"
+                       onkeyup="validateEmailField()">
+                <div id="emailFeedback" class="field-feedback"></div>
+            </div>
+            <div class="form-group">
+                <label for="reg_password">Password:</label>
+                <input type="password" id="reg_password" name="password" required placeholder="Create a password (min 6 characters)"
+                       onkeyup="validatePasswordField()">
+                <small class="field-hint">Must include uppercase, lowercase, and number</small>
+                <div id="passwordFeedback" class="field-feedback"></div>
+            </div>
+            <div class="form-group">
+                <label for="reg_confirm_password">Confirm Password:</label>
+                <input type="password" id="reg_confirm_password" name="confirm_password" required placeholder="Confirm your password"
+                       onkeyup="validateConfirmPassword()">
+                <div id="confirmPasswordFeedback" class="field-feedback"></div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="registerButton">Create Account</button>
+        </form>
+        
+        <div class="demo-accounts">
+            <h3>Demo Account:</h3>
+            <p><strong>Admin:</strong> username: <code>admin</code>, password: <code>admin123</code></p>
+            <p><em>Create your own account using the registration form!</em></p>
+        </div>
+    </div>
+    
+    <script>
+        function showTab(tabName) {
+            // Hide all forms
+            document.querySelectorAll('.form').forEach(form => {
+                form.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected form and activate button
+            document.getElementById(tabName + 'Form').classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            // Reset validation messages when switching tabs
+            resetValidation();
+        }
+        
+        function validateUsernameField() {
+            const username = document.getElementById('reg_username').value;
+            const feedback = document.getElementById('usernameFeedback');
+            
+            if (username.length === 0) {
+                feedback.textContent = '';
+                feedback.className = 'field-feedback';
+                return;
+            }
+            
+            if (username.length < 3) {
+                feedback.textContent = 'Username too short (min 3 characters)';
+                feedback.className = 'field-feedback error';
+            } else if (username.length > 20) {
+                feedback.textContent = 'Username too long (max 20 characters)';
+                feedback.className = 'field-feedback error';
+            } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                feedback.textContent = 'Only letters, numbers, and underscores allowed';
+                feedback.className = 'field-feedback error';
+            } else {
+                feedback.textContent = '✓ Username available';
+                feedback.className = 'field-feedback success';
+            }
+        }
+        
+        function validateEmailField() {
+            const email = document.getElementById('reg_email').value;
+            const feedback = document.getElementById('emailFeedback');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (email.length === 0) {
+                feedback.textContent = '';
+                feedback.className = 'field-feedback';
+                return;
+            }
+            
+            if (!emailRegex.test(email)) {
+                feedback.textContent = 'Please enter a valid email address';
+                feedback.className = 'field-feedback error';
+            } else {
+                feedback.textContent = '✓ Valid email format';
+                feedback.className = 'field-feedback success';
+            }
+        }
+        
+        function validatePasswordField() {
+            const password = document.getElementById('reg_password').value;
+            const feedback = document.getElementById('passwordFeedback');
+            
+            if (password.length === 0) {
+                feedback.textContent = '';
+                feedback.className = 'field-feedback';
+                return;
+            }
+            
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasLowerCase = /[a-z]/.test(password);
+            const hasNumbers = /\d/.test(password);
+            
+            if (password.length < 6) {
+                feedback.textContent = 'Password too short (min 6 characters)';
+                feedback.className = 'field-feedback error';
+            } else if (!hasUpperCase) {
+                feedback.textContent = 'Add at least one uppercase letter';
+                feedback.className = 'field-feedback error';
+            } else if (!hasLowerCase) {
+                feedback.textContent = 'Add at least one lowercase letter';
+                feedback.className = 'field-feedback error';
+            } else if (!hasNumbers) {
+                feedback.textContent = 'Add at least one number';
+                feedback.className = 'field-feedback error';
+            } else {
+                feedback.textContent = '✓ Strong password';
+                feedback.className = 'field-feedback success';
+            }
+            
+            // Also validate confirm password when password changes
+            validateConfirmPassword();
+        }
+        
+        function validateConfirmPassword() {
+            const password = document.getElementById('reg_password').value;
+            const confirmPassword = document.getElementById('reg_confirm_password').value;
+            const feedback = document.getElementById('confirmPasswordFeedback');
+            
+            if (confirmPassword.length === 0) {
+                feedback.textContent = '';
+                feedback.className = 'field-feedback';
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                feedback.textContent = 'Passwords do not match';
+                feedback.className = 'field-feedback error';
+            } else {
+                feedback.textContent = '✓ Passwords match';
+                feedback.className = 'field-feedback success';
+            }
+        }
+        
+        function resetValidation() {
+            document.querySelectorAll('.field-feedback').forEach(feedback => {
+                feedback.textContent = '';
+                feedback.className = 'field-feedback';
+            });
+        }
+        
+        // Real-time validation as user types
+        document.getElementById('registerForm').addEventListener('input', function(e) {
+            if (e.target.name === 'username') validateUsernameField();
+            if (e.target.name === 'email') validateEmailField();
+            if (e.target.name === 'password') validatePasswordField();
+            if (e.target.name === 'confirm_password') validateConfirmPassword();
+        });
+    </script>
+</body>
+</html>

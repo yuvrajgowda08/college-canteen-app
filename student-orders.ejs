@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Canteen - My Orders</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>College Canteen</h1>
+            <nav>
+                <span>Welcome, <%= user.username %>!</span>
+                <a href="/menu" class="btn btn-secondary">Order Food</a>
+                <a href="/logout" class="btn">Logout</a>
+            </nav>
+        </div>
+    </header>
+    
+    <main class="container">
+        <h2>My Orders</h2>
+        
+        <% if (orders.length === 0) { %>
+            <div class="empty-orders">
+                <h3>No orders yet</h3>
+                <p>You haven't placed any orders yet.</p>
+                <a href="/menu" class="btn btn-primary">Order Now</a>
+            </div>
+        <% } else { %>
+            <div class="orders-list">
+                <% orders.forEach(order => { %>
+                    <div class="order-card student-order" data-order-id="<%= order.id %>">
+                        <div class="order-header">
+                            <h3>Order #<%= order.id %></h3>
+                            <span class="order-date"><%= order.order_date.toLocaleString() %></span>
+                        </div>
+                        
+                        <div class="order-status-display">
+                            <div class="status-info">
+                                <strong>Current Status:</strong>
+                                <span class="status-badge status-<%= order.status %>">
+                                    <%= order.status.toUpperCase() %>
+                                </span>
+                            </div>
+                            
+                            <!-- Status Progress Bar -->
+                            <div class="status-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-step <%= order.status === 'pending' || order.status === 'confirmed' || order.status === 'preparing' || order.status === 'ready' || order.status === 'completed' ? 'active' : '' %>">
+                                        <span class="step-number">1</span>
+                                        <span class="step-label">Ordered</span>
+                                    </div>
+                                    <div class="progress-step <%= order.status === 'confirmed' || order.status === 'preparing' || order.status === 'ready' || order.status === 'completed' ? 'active' : '' %>">
+                                        <span class="step-number">2</span>
+                                        <span class="step-label">Confirmed</span>
+                                    </div>
+                                    <div class="progress-step <%= order.status === 'preparing' || order.status === 'ready' || order.status === 'completed' ? 'active' : '' %>">
+                                        <span class="step-number">3</span>
+                                        <span class="step-label">Preparing</span>
+                                    </div>
+                                    <div class="progress-step <%= order.status === 'ready' || order.status === 'completed' ? 'active' : '' %>">
+                                        <span class="step-number">4</span>
+                                        <span class="step-label">Ready</span>
+                                    </div>
+                                    <div class="progress-step <%= order.status === 'completed' ? 'active' : '' %>">
+                                        <span class="step-number">5</span>
+                                        <span class="step-label">Completed</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Status Messages -->
+                            <div class="status-message">
+                                <% if (order.status === 'pending') { %>
+                                    <p>⏳ Your order has been received and is waiting for confirmation.</p>
+                                <% } else if (order.status === 'confirmed') { %>
+                                    <p>✅ Order confirmed! The kitchen will start preparing your food soon.</p>
+                                <% } else if (order.status === 'preparing') { %>
+                                    <p>👨‍🍳 Your order is being prepared in the kitchen. Estimated time: 15-20 minutes.</p>
+                                <% } else if (order.status === 'ready') { %>
+                                    <p>🎉 Your order is ready! Please come to the counter to pick it up.</p>
+                                <% } else if (order.status === 'completed') { %>
+                                    <p>✔️ Order completed. Thank you for your order!</p>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <div class="order-details">
+                            <div class="order-items">
+                                <h4>Order Items:</h4>
+                                <% order.items.forEach(item => { %>
+                                    <div class="order-item">
+                                        <span class="item-name"><%= item.quantity %> x <%= item.name %></span>
+                                        <span class="item-price">₹<%= item.total %></span>
+                                    </div>
+                                <% }); %>
+                            </div>
+                            
+                            <div class="order-total">
+                                <strong>Total Amount: ₹<%= order.total_amount %></strong>
+                            </div>
+                        </div>
+                        
+                        <% if (order.status === 'ready') { %>
+                            <div class="ready-notification">
+                                <div class="notification-banner">
+                                    <span class="notification-icon">🔔</span>
+                                    <strong>Your order is ready for pickup!</strong>
+                                    <span>Please collect it from the canteen counter.</span>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                <% }); %>
+            </div>
+            
+            <div class="auto-refresh-notice">
+                <p>🔄 Order status updates automatically every 30 seconds</p>
+            </div>
+        <% } %>
+    </main>
+
+    <script>
+        // Auto-refresh order status every 30 seconds
+        setInterval(() => {
+            window.location.reload();
+        }, 30000);
+        
+        // Add visual effects for status changes
+        document.addEventListener('DOMContentLoaded', function() {
+            const orderCards = document.querySelectorAll('.student-order');
+            orderCards.forEach(card => {
+                card.classList.add('fade-in');
+            });
+        });
+    </script>
+</body>
+</html>

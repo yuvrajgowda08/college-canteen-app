@@ -1,42 +1,35 @@
+# Path-to-RegExp
 
-# cookie-signature
+Turn an Express-style path string such as `/user/:name` into a regular expression.
 
-  Sign and unsign cookies.
+**Note:** This is a legacy branch. You should upgrade to `1.x`.
 
-## Example
+## Usage
 
-```js
-var cookie = require('cookie-signature');
-
-var val = cookie.sign('hello', 'tobiiscool');
-val.should.equal('hello.DGDUkGlIkCzPz+C0B064FNgHdEjox7ch8tOBGslZ5QI');
-
-var val = cookie.sign('hello', 'tobiiscool');
-cookie.unsign(val, 'tobiiscool').should.equal('hello');
-cookie.unsign(val, 'luna').should.be.false;
+```javascript
+var pathToRegexp = require('path-to-regexp');
 ```
 
-## License 
+### pathToRegexp(path, keys, options)
 
-(The MIT License)
+ - **path** A string in the express format, an array of such strings, or a regular expression
+ - **keys** An array to be populated with the keys present in the url.  Once the function completes, this will be an array of strings.
+ - **options**
+   - **options.sensitive** Defaults to false, set this to true to make routes case sensitive
+   - **options.strict** Defaults to false, set this to true to make the trailing slash matter.
+   - **options.end** Defaults to true, set this to false to only match the prefix of the URL.
 
-Copyright (c) 2012 LearnBoost &lt;tj@learnboost.com&gt;
+```javascript
+var keys = [];
+var exp = pathToRegexp('/foo/:bar', keys);
+//keys = ['bar']
+//exp = /^\/foo\/(?:([^\/]+?))\/?$/i
+```
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-'Software'), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+## Live Demo
 
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
+You can see a live demo of this library in use at [express-route-tester](http://forbeslindesay.github.com/express-route-tester/).
 
-THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+## License
+
+  MIT

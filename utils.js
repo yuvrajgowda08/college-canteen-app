@@ -1,250 +1,303 @@
-/*
- * EJS Embedded JavaScript templates
- * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
-*/
-
-/**
- * Private utility functions
- * @module utils
- * @private
+/*!
+ * express
+ * Copyright(c) 2009-2013 TJ Holowaychuk
+ * Copyright(c) 2014-2015 Douglas Christopher Wilson
+ * MIT Licensed
  */
 
 'use strict';
 
-var regExpChars = /[|\\{}()[\]^$+*?.]/g;
-var hasOwnProperty = Object.prototype.hasOwnProperty;
-var hasOwn = function (obj, key) { return hasOwnProperty.apply(obj, [key]); };
+/**
+ * Module dependencies.
+ * @api private
+ */
+
+var Buffer = require('safe-buffer').Buffer
+var contentDisposition = require('content-disposition');
+var contentType = require('content-type');
+var deprecate = require('depd')('express');
+var flatten = require('array-flatten');
+var mime = require('send').mime;
+var etag = require('etag');
+var proxyaddr = require('proxy-addr');
+var qs = require('qs');
+var querystring = require('querystring');
 
 /**
- * Escape characters reserved in regular expressions.
+ * Return strong ETag for `body`.
  *
- * If `string` is `undefined` or `null`, the empty string is returned.
- *
- * @param {String} string Input string
- * @return {String} Escaped string
- * @static
- * @private
+ * @param {String|Buffer} body
+ * @param {String} [encoding]
+ * @return {String}
+ * @api private
  */
-exports.escapeRegExpChars = function (string) {
-  // istanbul ignore if
-  if (!string) {
-    return '';
+
+exports.etag = createETagGenerator({ weak: false })
+
+/**
+ * Return weak ETag for `body`.
+ *
+ * @param {String|Buffer} body
+ * @param {String} [encoding]
+ * @return {String}
+ * @api private
+ */
+
+exports.wetag = createETagGenerator({ weak: true })
+
+/**
+ * Check if `path` looks absolute.
+ *
+ * @param {String} path
+ * @return {Boolean}
+ * @api private
+ */
+
+exports.isAbsolute = function(path){
+  if ('/' === path[0]) return true;
+  if (':' === path[1] && ('\\' === path[2] || '/' === path[2])) return true; // Windows device path
+  if ('\\\\' === path.substring(0, 2)) return true; // Microsoft Azure absolute path
+};
+
+/**
+ * Flatten the given `arr`.
+ *
+ * @param {Array} arr
+ * @return {Array}
+ * @api private
+ */
+
+exports.flatten = deprecate.function(flatten,
+  'utils.flatten: use array-flatten npm module instead');
+
+/**
+ * Normalize the given `type`, for example "html" becomes "text/html".
+ *
+ * @param {String} type
+ * @return {Object}
+ * @api private
+ */
+
+exports.normalizeType = function(type){
+  return ~type.indexOf('/')
+    ? acceptParams(type)
+    : { value: mime.lookup(type), params: {} };
+};
+
+/**
+ * Normalize `types`, for example "html" becomes "text/html".
+ *
+ * @param {Array} types
+ * @return {Array}
+ * @api private
+ */
+
+exports.normalizeTypes = function(types){
+  var ret = [];
+
+  for (var i = 0; i < types.length; ++i) {
+    ret.push(exports.normalizeType(types[i]));
   }
-  return String(string).replace(regExpChars, '\\$&');
+
+  return ret;
 };
 
-var _ENCODE_HTML_RULES = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&#34;',
-  "'": '&#39;'
-};
-var _MATCH_HTML = /[&<>'"]/g;
+/**
+ * Generate Content-Disposition header appropriate for the filename.
+ * non-ascii filenames are urlencoded and a filename* parameter is added
+ *
+ * @param {String} filename
+ * @return {String}
+ * @api private
+ */
 
-function encode_char(c) {
-  return _ENCODE_HTML_RULES[c] || c;
+exports.contentDisposition = deprecate.function(contentDisposition,
+  'utils.contentDisposition: use content-disposition npm module instead');
+
+/**
+ * Parse accept params `str` returning an
+ * object with `.value`, `.quality` and `.params`.
+ *
+ * @param {String} str
+ * @return {Object}
+ * @api private
+ */
+
+function acceptParams (str) {
+  var parts = str.split(/ *; */);
+  var ret = { value: parts[0], quality: 1, params: {} }
+
+  for (var i = 1; i < parts.length; ++i) {
+    var pms = parts[i].split(/ *= */);
+    if ('q' === pms[0]) {
+      ret.quality = parseFloat(pms[1]);
+    } else {
+      ret.params[pms[0]] = pms[1];
+    }
+  }
+
+  return ret;
 }
 
 /**
- * Stringified version of constants used by {@link module:utils.escapeXML}.
+ * Compile "etag" value to function.
  *
- * It is used in the process of generating {@link ClientFunction}s.
- *
- * @readonly
- * @type {String}
+ * @param  {Boolean|String|Function} val
+ * @return {Function}
+ * @api private
  */
 
-var escapeFuncStr =
-  'var _ENCODE_HTML_RULES = {\n'
-+ '      "&": "&amp;"\n'
-+ '    , "<": "&lt;"\n'
-+ '    , ">": "&gt;"\n'
-+ '    , \'"\': "&#34;"\n'
-+ '    , "\'": "&#39;"\n'
-+ '    }\n'
-+ '  , _MATCH_HTML = /[&<>\'"]/g;\n'
-+ 'function encode_char(c) {\n'
-+ '  return _ENCODE_HTML_RULES[c] || c;\n'
-+ '};\n';
+exports.compileETag = function(val) {
+  var fn;
 
-/**
- * Escape characters reserved in XML.
- *
- * If `markup` is `undefined` or `null`, the empty string is returned.
- *
- * @implements {EscapeCallback}
- * @param {String} markup Input string
- * @return {String} Escaped string
- * @static
- * @private
- */
-
-exports.escapeXML = function (markup) {
-  return markup == undefined
-    ? ''
-    : String(markup)
-      .replace(_MATCH_HTML, encode_char);
-};
-
-function escapeXMLToString() {
-  return Function.prototype.toString.call(this) + ';\n' + escapeFuncStr;
-}
-
-try {
-  if (typeof Object.defineProperty === 'function') {
-  // If the Function prototype is frozen, the "toString" property is non-writable. This means that any objects which inherit this property
-  // cannot have the property changed using an assignment. If using strict mode, attempting that will cause an error. If not using strict
-  // mode, attempting that will be silently ignored.
-  // However, we can still explicitly shadow the prototype's "toString" property by defining a new "toString" property on this object.
-    Object.defineProperty(exports.escapeXML, 'toString', { value: escapeXMLToString });
-  } else {
-    // If Object.defineProperty() doesn't exist, attempt to shadow this property using the assignment operator.
-    exports.escapeXML.toString = escapeXMLToString;
+  if (typeof val === 'function') {
+    return val;
   }
-} catch (err) {
-  console.warn('Unable to set escapeXML.toString (is the Function prototype frozen?)');
+
+  switch (val) {
+    case true:
+    case 'weak':
+      fn = exports.wetag;
+      break;
+    case false:
+      break;
+    case 'strong':
+      fn = exports.etag;
+      break;
+    default:
+      throw new TypeError('unknown value for etag function: ' + val);
+  }
+
+  return fn;
 }
 
 /**
- * Naive copy of properties from one object to another.
- * Does not recurse into non-scalar properties
- * Does not check to see if the property has a value before copying
+ * Compile "query parser" value to function.
  *
- * @param  {Object} to   Destination object
- * @param  {Object} from Source object
- * @return {Object}      Destination object
- * @static
- * @private
+ * @param  {String|Function} val
+ * @return {Function}
+ * @api private
  */
-exports.shallowCopy = function (to, from) {
-  from = from || {};
-  if ((to !== null) && (to !== undefined)) {
-    for (var p in from) {
-      if (!hasOwn(from, p)) {
-        continue;
-      }
-      if (p === '__proto__' || p === 'constructor') {
-        continue;
-      }
-      to[p] = from[p];
-    }
+
+exports.compileQueryParser = function compileQueryParser(val) {
+  var fn;
+
+  if (typeof val === 'function') {
+    return val;
   }
-  return to;
+
+  switch (val) {
+    case true:
+    case 'simple':
+      fn = querystring.parse;
+      break;
+    case false:
+      fn = newObject;
+      break;
+    case 'extended':
+      fn = parseExtendedQueryString;
+      break;
+    default:
+      throw new TypeError('unknown value for query parser function: ' + val);
+  }
+
+  return fn;
+}
+
+/**
+ * Compile "proxy trust" value to function.
+ *
+ * @param  {Boolean|String|Number|Array|Function} val
+ * @return {Function}
+ * @api private
+ */
+
+exports.compileTrust = function(val) {
+  if (typeof val === 'function') return val;
+
+  if (val === true) {
+    // Support plain true/false
+    return function(){ return true };
+  }
+
+  if (typeof val === 'number') {
+    // Support trusting hop count
+    return function(a, i){ return i < val };
+  }
+
+  if (typeof val === 'string') {
+    // Support comma-separated values
+    val = val.split(',')
+      .map(function (v) { return v.trim() })
+  }
+
+  return proxyaddr.compile(val || []);
+}
+
+/**
+ * Set the charset in a given Content-Type string.
+ *
+ * @param {String} type
+ * @param {String} charset
+ * @return {String}
+ * @api private
+ */
+
+exports.setCharset = function setCharset(type, charset) {
+  if (!type || !charset) {
+    return type;
+  }
+
+  // parse type
+  var parsed = contentType.parse(type);
+
+  // set charset
+  parsed.parameters.charset = charset;
+
+  // format type
+  return contentType.format(parsed);
 };
 
 /**
- * Naive copy of a list of key names, from one object to another.
- * Only copies property if it is actually defined
- * Does not recurse into non-scalar properties
+ * Create an ETag generator function, generating ETags with
+ * the given options.
  *
- * @param  {Object} to   Destination object
- * @param  {Object} from Source object
- * @param  {Array} list List of properties to copy
- * @return {Object}      Destination object
- * @static
+ * @param {object} options
+ * @return {function}
  * @private
  */
-exports.shallowCopyFromList = function (to, from, list) {
-  list = list || [];
-  from = from || {};
-  if ((to !== null) && (to !== undefined)) {
-    for (var i = 0; i < list.length; i++) {
-      var p = list[i];
-      if (typeof from[p] != 'undefined') {
-        if (!hasOwn(from, p)) {
-          continue;
-        }
-        if (p === '__proto__' || p === 'constructor') {
-          continue;
-        }
-        to[p] = from[p];
-      }
-    }
+
+function createETagGenerator (options) {
+  return function generateETag (body, encoding) {
+    var buf = !Buffer.isBuffer(body)
+      ? Buffer.from(body, encoding)
+      : body
+
+    return etag(buf, options)
   }
-  return to;
-};
+}
 
 /**
- * Simple in-process cache implementation. Does not implement limits of any
- * sort.
+ * Parse an extended query string with qs.
  *
- * @implements {Cache}
- * @static
+ * @param {String} str
+ * @return {Object}
  * @private
  */
-exports.cache = {
-  _data: {},
-  set: function (key, val) {
-    this._data[key] = val;
-  },
-  get: function (key) {
-    return this._data[key];
-  },
-  remove: function (key) {
-    delete this._data[key];
-  },
-  reset: function () {
-    this._data = {};
-  }
-};
+
+function parseExtendedQueryString(str) {
+  return qs.parse(str, {
+    allowPrototypes: true
+  });
+}
 
 /**
- * Transforms hyphen case variable into camel case.
+ * Return new empty object.
  *
- * @param {String} string Hyphen case string
- * @return {String} Camel case string
- * @static
- * @private
+ * @return {Object}
+ * @api private
  */
-exports.hyphenToCamel = function (str) {
-  return str.replace(/-[a-z]/g, function (match) { return match[1].toUpperCase(); });
-};
 
-/**
- * Returns a null-prototype object in runtimes that support it
- *
- * @return {Object} Object, prototype will be set to null where possible
- * @static
- * @private
- */
-exports.createNullProtoObjWherePossible = (function () {
-  if (typeof Object.create == 'function') {
-    return function () {
-      return Object.create(null);
-    };
-  }
-  if (!({__proto__: null} instanceof Object)) {
-    return function () {
-      return {__proto__: null};
-    };
-  }
-  // Not possible, just pass through
-  return function () {
-    return {};
-  };
-})();
-
-exports.hasOwnOnlyObject = function (obj) {
-  var o = exports.createNullProtoObjWherePossible();
-  for (var p in obj) {
-    if (hasOwn(obj, p)) {
-      o[p] = obj[p];
-    }
-  }
-  return o;
-};
-
+function newObject() {
+  return {};
+}

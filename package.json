@@ -1,30 +1,35 @@
 {
-  "name": "college-canteen-app",
-  "version": "1.0.0",
-  "description": "College Canteen Food Ordering System with Multi-Device Support",
-  "main": "app.js",
+  "name": "aproba",
+  "version": "2.1.0",
+  "description": "A ridiculously light-weight argument validator (now browser friendly)",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "standard": "^11.0.1",
+    "tap": "^12.0.1"
+  },
+  "files": [
+    "index.js"
+  ],
   "scripts": {
-    "start": "node app.js",
-    "dev": "node app.js",
-    "multi-device": "node app.js"
+    "pretest": "standard",
+    "test": "tap --100 -J test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iarna/aproba"
   },
   "keywords": [
-    "canteen",
-    "food-ordering",
-    "college",
-    "express",
-    "multi-device"
+    "argument",
+    "validate"
   ],
-  "author": "Your Name",
-  "license": "MIT",
-  "dependencies": {
-    "bcrypt": "^5.1.1",
-    "ejs": "^3.1.10",
-    "express": "^4.21.2",
-    "express-session": "^1.18.2",
-    "path": "^0.12.7"
+  "author": "Rebecca Turner <me@re-becca.org>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/iarna/aproba/issues"
   },
-  "engines": {
-    "node": ">=14.0.0"
-  }
+  "homepage": "https://github.com/iarna/aproba"
 }

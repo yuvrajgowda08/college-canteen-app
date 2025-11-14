@@ -1,65 +1,28 @@
-# v3.0
+# Changelog
 
-- Add `--preserve-root` option to executable (default true)
-- Drop support for Node.js below version 6
+All notable changes to this project will be documented in this file.
 
-# v2.7
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-- Make `glob` an optional dependency
+## [v1.0.2](https://github.com/ljharb/side-channel-weakmap/compare/v1.0.1...v1.0.2) - 2024-12-10
 
-# 2.6
+### Commits
 
-- Retry on EBUSY on non-windows platforms as well
-- Make `rimraf.sync` 10000% more reliable on Windows
+- [types] fix generics ordering [`1b62e94`](https://github.com/ljharb/side-channel-weakmap/commit/1b62e94a2ad6ed30b640ba73c4a2535836c67289)
 
-# 2.5
+## [v1.0.1](https://github.com/ljharb/side-channel-weakmap/compare/v1.0.0...v1.0.1) - 2024-12-10
 
-- Handle Windows EPERM when lstat-ing read-only dirs
-- Add glob option to pass options to glob
+### Commits
 
-# 2.4
+- [types] fix generics ordering [`08a4a5d`](https://github.com/ljharb/side-channel-weakmap/commit/08a4a5dbffedc3ebc79f1aaaf5a3dd6d2196dc1b)
+- [Deps] update `side-channel-map` [`b53fe44`](https://github.com/ljharb/side-channel-weakmap/commit/b53fe447dfdd3a9aebedfd015b384eac17fce916)
 
-- Add EPERM to delay/retry loop
-- Add `disableGlob` option
+## v1.0.0 - 2024-12-10
 
-# 2.3
+### Commits
 
-- Make maxBusyTries and emfileWait configurable
-- Handle weird SunOS unlink-dir issue
-- Glob the CLI arg for better Windows support
-
-# 2.2
-
-- Handle ENOENT properly on Windows
-- Allow overriding fs methods
-- Treat EPERM as indicative of non-empty dir
-- Remove optional graceful-fs dep
-- Consistently return null error instead of undefined on success
-- win32: Treat ENOTEMPTY the same as EBUSY
-- Add `rimraf` binary
-
-# 2.1
-
-- Fix SunOS error code for a non-empty directory
-- Try rmdir before readdir
-- Treat EISDIR like EPERM
-- Remove chmod
-- Remove lstat polyfill, node 0.7 is not supported
-
-# 2.0
-
-- Fix myGid call to check process.getgid
-- Simplify the EBUSY backoff logic.
-- Use fs.lstat in node >= 0.7.9
-- Remove gently option
-- remove fiber implementation
-- Delete files that are marked read-only
-
-# 1.0
-
-- Allow ENOENT in sync method
-- Throw when no callback is provided
-- Make opts.gently an absolute path
-- use 'stat' if 'lstat' is not available
-- Consistent error naming, and rethrow non-ENOENT stat errors
-- add fiber implementation
+- Initial implementation, tests, readme, types [`53c0fa4`](https://github.com/ljharb/side-channel-weakmap/commit/53c0fa4788435a006f58b9d7b43cb65989ecee49)
+- Initial commit [`a157947`](https://github.com/ljharb/side-channel-weakmap/commit/a157947f26fcaf2c4a941d3a044e76bf67343532)
+- npm init [`54dfc55`](https://github.com/ljharb/side-channel-weakmap/commit/54dfc55bafb16265910d5aad4e743c43aee5bbbb)
+- Only apps should have lockfiles [`0ddd6c7`](https://github.com/ljharb/side-channel-weakmap/commit/0ddd6c7b07fe8ee04d67b2e9f7255af7ce62c07d)

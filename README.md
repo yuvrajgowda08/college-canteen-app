@@ -1,94 +1,135 @@
-aproba
-======
+# brace-expansion
 
-A ridiculously light-weight function argument validator
+[Brace expansion](https://www.gnu.org/software/bash/manual/html_node/Brace-Expansion.html), 
+as known from sh/bash, in JavaScript.
 
-```
-var validate = require("aproba")
+[![build status](https://secure.travis-ci.org/juliangruber/brace-expansion.svg)](http://travis-ci.org/juliangruber/brace-expansion)
+[![downloads](https://img.shields.io/npm/dm/brace-expansion.svg)](https://www.npmjs.org/package/brace-expansion)
+[![Greenkeeper badge](https://badges.greenkeeper.io/juliangruber/brace-expansion.svg)](https://greenkeeper.io/)
 
-function myfunc(a, b, c) {
-  // `a` must be a string, `b` a number, `c` a function
-  validate('SNF', arguments) // [a,b,c] is also valid
-}
+[![testling badge](https://ci.testling.com/juliangruber/brace-expansion.png)](https://ci.testling.com/juliangruber/brace-expansion)
 
-myfunc('test', 23, function () {}) // ok
-myfunc(123, 23, function () {}) // type error
-myfunc('test', 23) // missing arg error
-myfunc('test', 23, function () {}, true) // too many args error
+## Example
 
-```
+```js
+var expand = require('brace-expansion');
 
-Valid types are:
+expand('file-{a,b,c}.jpg')
+// => ['file-a.jpg', 'file-b.jpg', 'file-c.jpg']
 
-| type | description
-| :--: | :----------
-| *    | matches any type
-| A    | `Array.isArray` OR an `arguments` object
-| S    | typeof == string
-| N    | typeof == number
-| F    | typeof == function
-| O    | typeof == object and not type A and not type E
-| B    | typeof == boolean
-| E    | `instanceof Error` OR `null` **(special: see below)**
-| Z    | == `null`
+expand('-v{,,}')
+// => ['-v', '-v', '-v']
 
-Validation failures throw one of three exception types, distinguished by a
-`code` property of `EMISSINGARG`, `EINVALIDTYPE` or `ETOOMANYARGS`.
+expand('file{0..2}.jpg')
+// => ['file0.jpg', 'file1.jpg', 'file2.jpg']
 
-If you pass in an invalid type then it will throw with a code of
-`EUNKNOWNTYPE`.
+expand('file-{a..c}.jpg')
+// => ['file-a.jpg', 'file-b.jpg', 'file-c.jpg']
 
-If an **error** argument is found and is not null then the remaining
-arguments are optional.  That is, if you say `ESO` then that's like using a
-non-magical `E` in: `E|ESO|ZSO`.
+expand('file{2..0}.jpg')
+// => ['file2.jpg', 'file1.jpg', 'file0.jpg']
 
-### But I have optional arguments?!
+expand('file{0..4..2}.jpg')
+// => ['file0.jpg', 'file2.jpg', 'file4.jpg']
 
-You can provide more than one signature by separating them with pipes `|`.
-If any signature matches the arguments then they'll be considered valid.
+expand('file-{a..e..2}.jpg')
+// => ['file-a.jpg', 'file-c.jpg', 'file-e.jpg']
 
-So for example, say you wanted to write a signature for
-`fs.createWriteStream`.  The docs for it describe it thusly:
+expand('file{00..10..5}.jpg')
+// => ['file00.jpg', 'file05.jpg', 'file10.jpg']
 
-```
-fs.createWriteStream(path[, options])
+expand('{{A..C},{a..c}}')
+// => ['A', 'B', 'C', 'a', 'b', 'c']
+
+expand('ppp{,config,oe{,conf}}')
+// => ['ppp', 'pppconfig', 'pppoe', 'pppoeconf']
 ```
 
-This would be a signature of `SO|S`.  That is, a string and and object, or
-just a string.
+## API
 
-Now, if you read the full `fs` docs, you'll see that actually path can ALSO
-be a buffer.  And options can be a string, that is:
-```
-path <String> | <Buffer>
-options <String> | <Object>
+```js
+var expand = require('brace-expansion');
 ```
 
-To reproduce this you have to fully enumerate all of the possible
-combinations and that implies a signature of `SO|SS|OO|OS|S|O`.  The
-awkwardness is a feature: It reminds you of the complexity you're adding to
-your API when you do this sort of thing.
+### var expanded = expand(str)
 
+Return an array of all possible and valid expansions of `str`. If none are
+found, `[str]` is returned.
 
-### Browser support
+Valid expansions are:
 
-This has no dependencies and should work in browsers, though you'll have
-noisier stack traces.
+```js
+/^(.*,)+(.+)?$/
+// {a,b,...}
+```
 
-### Why this exists
+A comma separated list of options, like `{a,b}` or `{a,{b,c}}` or `{,a,}`.
 
-I wanted a very simple argument validator. It needed to do two things:
+```js
+/^-?\d+\.\.-?\d+(\.\.-?\d+)?$/
+// {x..y[..incr]}
+```
 
-1. Be more concise and easier to use than assertions
+A numeric sequence from `x` to `y` inclusive, with optional increment.
+If `x` or `y` start with a leading `0`, all the numbers will be padded
+to have equal length. Negative numbers and backwards iteration work too.
 
-2. Not encourage an infinite bikeshed of DSLs
+```js
+/^-?\d+\.\.-?\d+(\.\.-?\d+)?$/
+// {x..y[..incr]}
+```
 
-This is why types are specified by a single character and there's no such
-thing as an optional argument. 
+An alphabetic sequence from `x` to `y` inclusive, with optional increment.
+`x` and `y` must be exactly one character, and if given, `incr` must be a
+number.
 
-This is not intended to validate user data. This is specifically about
-asserting the interface of your functions.
+For compatibility reasons, the string `${` is not eligible for brace expansion.
 
-If you need greater validation, I encourage you to write them by hand or
-look elsewhere.
+## Installation
 
+With [npm](https://npmjs.org) do:
+
+```bash
+npm install brace-expansion
+```
+
+## Contributors
+
+- [Julian Gruber](https://github.com/juliangruber)
+- [Isaac Z. Schlueter](https://github.com/isaacs)
+
+## Sponsors
+
+This module is proudly supported by my [Sponsors](https://github.com/juliangruber/sponsors)!
+
+Do you want to support modules like this to improve their quality, stability and weigh in on new features? Then please consider donating to my [Patreon](https://www.patreon.com/juliangruber). Not sure how much of my modules you're using? Try [feross/thanks](https://github.com/feross/thanks)!
+
+## Security contact information
+
+To report a security vulnerability, please use the
+[Tidelift security contact](https://tidelift.com/security).
+Tidelift will coordinate the fix and disclosure.
+
+## License
+
+(MIT)
+
+Copyright (c) 2013 Julian Gruber &lt;julian@juliangruber.com&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -1,29 +1,29 @@
 {
-  "name": "wrappy",
-  "version": "1.0.2",
-  "description": "Callback wrapping utility",
-  "main": "wrappy.js",
-  "files": [
-    "wrappy.js"
-  ],
+  "name": "yallist",
+  "version": "4.0.0",
+  "description": "Yet Another Linked List",
+  "main": "yallist.js",
   "directories": {
     "test": "test"
   },
+  "files": [
+    "yallist.js",
+    "iterator.js"
+  ],
   "dependencies": {},
   "devDependencies": {
-    "tap": "^2.3.1"
+    "tap": "^12.1.0"
   },
   "scripts": {
-    "test": "tap --coverage test/*.js"
+    "test": "tap test/*.js --100",
+    "preversion": "npm test",
+    "postversion": "npm publish",
+    "postpublish": "git push origin --all; git push origin --tags"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/npm/wrappy"
+    "url": "git+https://github.com/isaacs/yallist.git"
   },
   "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/npm/wrappy/issues"
-  },
-  "homepage": "https://github.com/npm/wrappy"
+  "license": "ISC"
 }

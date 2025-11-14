@@ -1,94 +1,43 @@
 
-# delegates
+# escape-html
 
-  Node method and accessor delegation utilty.
-
-## Installation
-
-```
-$ npm install delegates
-```
+  Escape string for use in HTML
 
 ## Example
 
 ```js
-var delegate = require('delegates');
-
-...
-
-delegate(proto, 'request')
-  .method('acceptsLanguages')
-  .method('acceptsEncodings')
-  .method('acceptsCharsets')
-  .method('accepts')
-  .method('is')
-  .access('querystring')
-  .access('idempotent')
-  .access('socket')
-  .access('length')
-  .access('query')
-  .access('search')
-  .access('status')
-  .access('method')
-  .access('path')
-  .access('body')
-  .access('host')
-  .access('url')
-  .getter('subdomains')
-  .getter('protocol')
-  .getter('header')
-  .getter('stale')
-  .getter('fresh')
-  .getter('secure')
-  .getter('ips')
-  .getter('ip')
+var escape = require('escape-html');
+var html = escape('foo & bar');
+// -> foo &amp; bar
 ```
 
-# API
+## Benchmark
 
-## Delegate(proto, prop)
+```
+$ npm run-script bench
 
-Creates a delegator instance used to configure using the `prop` on the given
-`proto` object. (which is usually a prototype)
+> escape-html@1.0.3 bench nodejs-escape-html
+> node benchmark/index.js
 
-## Delegate#method(name)
 
-Allows the given method `name` to be accessed on the host.
+  http_parser@1.0
+  node@0.10.33
+  v8@3.14.5.9
+  ares@1.9.0-DEV
+  uv@0.10.29
+  zlib@1.2.3
+  modules@11
+  openssl@1.0.1j
 
-## Delegate#getter(name)
+  1 test completed.
+  2 tests completed.
+  3 tests completed.
 
-Creates a "getter" for the property with the given `name` on the delegated
-object.
-
-## Delegate#setter(name)
-
-Creates a "setter" for the property with the given `name` on the delegated
-object.
-
-## Delegate#access(name)
-
-Creates an "accessor" (ie: both getter *and* setter) for the property with the
-given `name` on the delegated object.
-
-## Delegate#fluent(name)
-
-A unique type of "accessor" that works for a "fluent" API. When called as a
-getter, the method returns the expected value. However, if the method is called
-with a value, it will return itself so it can be chained. For example:
-
-```js
-delegate(proto, 'request')
-  .fluent('query')
-
-// getter
-var q = request.query();
-
-// setter (chainable)
-request
-  .query({ a: 1 })
-  .query({ b: 2 });
+  no special characters    x 19,435,271 ops/sec ±0.85% (187 runs sampled)
+  single special character x  6,132,421 ops/sec ±0.67% (194 runs sampled)
+  many special characters  x  3,175,826 ops/sec ±0.65% (193 runs sampled)
 ```
 
-# License
+## License
 
   MIT

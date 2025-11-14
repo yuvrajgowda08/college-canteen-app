@@ -1,59 +1,59 @@
-# path-is-absolute [![Build Status](https://travis-ci.org/sindresorhus/path-is-absolute.svg?branch=master)](https://travis-ci.org/sindresorhus/path-is-absolute)
+# ms
 
-> Node.js 0.12 [`path.isAbsolute()`](http://nodejs.org/api/path.html#path_path_isabsolute_path) [ponyfill](https://ponyfill.com)
+![CI](https://github.com/vercel/ms/workflows/CI/badge.svg)
 
+Use this package to easily convert various time formats to milliseconds.
 
-## Install
-
-```
-$ npm install --save path-is-absolute
-```
-
-
-## Usage
+## Examples
 
 ```js
-const pathIsAbsolute = require('path-is-absolute');
-
-// Running on Linux
-pathIsAbsolute('/home/foo');
-//=> true
-pathIsAbsolute('C:/Users/foo');
-//=> false
-
-// Running on Windows
-pathIsAbsolute('C:/Users/foo');
-//=> true
-pathIsAbsolute('/home/foo');
-//=> false
-
-// Running on any OS
-pathIsAbsolute.posix('/home/foo');
-//=> true
-pathIsAbsolute.posix('C:/Users/foo');
-//=> false
-pathIsAbsolute.win32('C:/Users/foo');
-//=> true
-pathIsAbsolute.win32('/home/foo');
-//=> false
+ms('2 days')  // 172800000
+ms('1d')      // 86400000
+ms('10h')     // 36000000
+ms('2.5 hrs') // 9000000
+ms('2h')      // 7200000
+ms('1m')      // 60000
+ms('5s')      // 5000
+ms('1y')      // 31557600000
+ms('100')     // 100
+ms('-3 days') // -259200000
+ms('-1h')     // -3600000
+ms('-200')    // -200
 ```
 
+### Convert from Milliseconds
 
-## API
+```js
+ms(60000)             // "1m"
+ms(2 * 60000)         // "2m"
+ms(-3 * 60000)        // "-3m"
+ms(ms('10 hours'))    // "10h"
+```
 
-See the [`path.isAbsolute()` docs](http://nodejs.org/api/path.html#path_path_isabsolute_path).
+### Time Format Written-Out
 
-### pathIsAbsolute(path)
+```js
+ms(60000, { long: true })             // "1 minute"
+ms(2 * 60000, { long: true })         // "2 minutes"
+ms(-3 * 60000, { long: true })        // "-3 minutes"
+ms(ms('10 hours'), { long: true })    // "10 hours"
+```
 
-### pathIsAbsolute.posix(path)
+## Features
 
-POSIX specific version.
+- Works both in [Node.js](https://nodejs.org) and in the browser
+- If a number is supplied to `ms`, a string with a unit is returned
+- If a string that contains the number is supplied, it returns it as a number (e.g.: it returns `100` for `'100'`)
+- If you pass a string with a number and a valid unit, the number of equivalent milliseconds is returned
 
-### pathIsAbsolute.win32(path)
+## Related Packages
 
-Windows specific version.
+- [ms.macro](https://github.com/knpwrs/ms.macro) - Run `ms` as a macro at build-time.
 
+## Caught a Bug?
 
-## License
+1. [Fork](https://help.github.com/articles/fork-a-repo/) this repository to your own GitHub account and then [clone](https://help.github.com/articles/cloning-a-repository/) it to your local device
+2. Link the package to the global module directory: `npm link`
+3. Within the module you want to test your local development instance of ms, just link it to the dependencies: `npm link ms`. Instead of the default one from npm, Node.js will now use your clone of ms!
 
-MIT © [Sindre Sorhus](https://sindresorhus.com)
+As always, you can run the tests using: `npm test`

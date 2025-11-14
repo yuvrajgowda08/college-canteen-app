@@ -1,223 +1,327 @@
-# raw-body
+# send
 
-[![NPM Version][npm-image]][npm-url]
-[![NPM Downloads][downloads-image]][downloads-url]
-[![Node.js Version][node-version-image]][node-version-url]
-[![Build status][github-actions-ci-image]][github-actions-ci-url]
-[![Test coverage][coveralls-image]][coveralls-url]
+[![NPM Version][npm-version-image]][npm-url]
+[![NPM Downloads][npm-downloads-image]][npm-url]
+[![Linux Build][github-actions-ci-image]][github-actions-ci-url]
+[![Windows Build][appveyor-image]][appveyor-url]
+[![Test Coverage][coveralls-image]][coveralls-url]
 
-Gets the entire buffer of a stream either as a `Buffer` or a string.
-Validates the stream's length against an expected length and maximum limit.
-Ideal for parsing request bodies.
+Send is a library for streaming files from the file system as a http response
+supporting partial responses (Ranges), conditional-GET negotiation (If-Match,
+If-Unmodified-Since, If-None-Match, If-Modified-Since), high test coverage,
+and granular events which may be leveraged to take appropriate actions in your
+application or framework.
 
-## Install
+Looking to serve up entire folders mapped to URLs? Try [serve-static](https://www.npmjs.org/package/serve-static).
+
+## Installation
 
 This is a [Node.js](https://nodejs.org/en/) module available through the
 [npm registry](https://www.npmjs.com/). Installation is done using the
 [`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
 
-```sh
-$ npm install raw-body
-```
-
-### TypeScript
-
-This module includes a [TypeScript](https://www.typescriptlang.org/)
-declaration file to enable auto complete in compatible editors and type
-information for TypeScript projects. This module depends on the Node.js
-types, so install `@types/node`:
-
-```sh
-$ npm install @types/node
+```bash
+$ npm install send
 ```
 
 ## API
 
 ```js
-var getRawBody = require('raw-body')
+var send = require('send')
 ```
 
-### getRawBody(stream, [options], [callback])
+### send(req, path, [options])
 
-**Returns a promise if no callback specified and global `Promise` exists.**
+Create a new `SendStream` for the given path to send to a `res`. The `req` is
+the Node.js HTTP request and the `path` is a urlencoded path to send (urlencoded,
+not the actual file-system path).
 
-Options:
+#### Options
 
-- `length` - The length of the stream.
-  If the contents of the stream do not add up to this length,
-  an `400` error code is returned.
-- `limit` - The byte limit of the body.
-  This is the number of bytes or any string format supported by
-  [bytes](https://www.npmjs.com/package/bytes),
-  for example `1000`, `'500kb'` or `'3mb'`.
-  If the body ends up being larger than this limit,
-  a `413` error code is returned.
-- `encoding` - The encoding to use to decode the body into a string.
-  By default, a `Buffer` instance will be returned when no encoding is specified.
-  Most likely, you want `utf-8`, so setting `encoding` to `true` will decode as `utf-8`.
-  You can use any type of encoding supported by [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme).
+##### acceptRanges
 
-You can also pass a string in place of options to just specify the encoding.
+Enable or disable accepting ranged requests, defaults to true.
+Disabling this will not send `Accept-Ranges` and ignore the contents
+of the `Range` request header.
 
-If an error occurs, the stream will be paused, everything unpiped,
-and you are responsible for correctly disposing the stream.
-For HTTP requests, you may need to finish consuming the stream if
-you want to keep the socket open for future requests. For streams
-that use file descriptors, you should `stream.destroy()` or
-`stream.close()` to prevent leaks.
+##### cacheControl
 
-## Errors
+Enable or disable setting `Cache-Control` response header, defaults to
+true. Disabling this will ignore the `immutable` and `maxAge` options.
 
-This module creates errors depending on the error condition during reading.
-The error may be an error from the underlying Node.js implementation, but is
-otherwise an error created by this module, which has the following attributes:
+##### dotfiles
 
-  * `limit` - the limit in bytes
-  * `length` and `expected` - the expected length of the stream
-  * `received` - the received bytes
-  * `encoding` - the invalid encoding
-  * `status` and `statusCode` - the corresponding status code for the error
-  * `type` - the error type
+Set how "dotfiles" are treated when encountered. A dotfile is a file
+or directory that begins with a dot ("."). Note this check is done on
+the path itself without checking if the path actually exists on the
+disk. If `root` is specified, only the dotfiles above the root are
+checked (i.e. the root itself can be within a dotfile when when set
+to "deny").
 
-### Types
+  - `'allow'` No special treatment for dotfiles.
+  - `'deny'` Send a 403 for any request for a dotfile.
+  - `'ignore'` Pretend like the dotfile does not exist and 404.
 
-The errors from this module have a `type` property which allows for the programmatic
-determination of the type of error returned.
+The default value is _similar_ to `'ignore'`, with the exception that
+this default will not ignore the files within a directory that begins
+with a dot, for backward-compatibility.
 
-#### encoding.unsupported
+##### end
 
-This error will occur when the `encoding` option is specified, but the value does
-not map to an encoding supported by the [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme)
-module.
+Byte offset at which the stream ends, defaults to the length of the file
+minus 1. The end is inclusive in the stream, meaning `end: 3` will include
+the 4th byte in the stream.
 
-#### entity.too.large
+##### etag
 
-This error will occur when the `limit` option is specified, but the stream has
-an entity that is larger.
+Enable or disable etag generation, defaults to true.
 
-#### request.aborted
+##### extensions
 
-This error will occur when the request stream is aborted by the client before
-reading the body has finished.
+If a given file doesn't exist, try appending one of the given extensions,
+in the given order. By default, this is disabled (set to `false`). An
+example value that will serve extension-less HTML files: `['html', 'htm']`.
+This is skipped if the requested file already has an extension.
 
-#### request.size.invalid
+##### immutable
 
-This error will occur when the `length` option is specified, but the stream has
-emitted more bytes.
+Enable or disable the `immutable` directive in the `Cache-Control` response
+header, defaults to `false`. If set to `true`, the `maxAge` option should
+also be specified to enable caching. The `immutable` directive will prevent
+supported clients from making conditional requests during the life of the
+`maxAge` option to check if the file has changed.
 
-#### stream.encoding.set
+##### index
 
-This error will occur when the given stream has an encoding set on it, making it
-a decoded stream. The stream should not have an encoding set and is expected to
-emit `Buffer` objects.
+By default send supports "index.html" files, to disable this
+set `false` or to supply a new index pass a string or an array
+in preferred order.
 
-#### stream.not.readable
+##### lastModified
 
-This error will occur when the given stream is not readable.
+Enable or disable `Last-Modified` header, defaults to true. Uses the file
+system's last modified value.
+
+##### maxAge
+
+Provide a max-age in milliseconds for http caching, defaults to 0.
+This can also be a string accepted by the
+[ms](https://www.npmjs.org/package/ms#readme) module.
+
+##### root
+
+Serve files relative to `path`.
+
+##### start
+
+Byte offset at which the stream starts, defaults to 0. The start is inclusive,
+meaning `start: 2` will include the 3rd byte in the stream.
+
+#### Events
+
+The `SendStream` is an event emitter and will emit the following events:
+
+  - `error` an error occurred `(err)`
+  - `directory` a directory was requested `(res, path)`
+  - `file` a file was requested `(path, stat)`
+  - `headers` the headers are about to be set on a file `(res, path, stat)`
+  - `stream` file streaming has started `(stream)`
+  - `end` streaming has completed
+
+#### .pipe
+
+The `pipe` method is used to pipe the response into the Node.js HTTP response
+object, typically `send(req, path, options).pipe(res)`.
+
+### .mime
+
+The `mime` export is the global instance of of the
+[`mime` npm module](https://www.npmjs.com/package/mime).
+
+This is used to configure the MIME types that are associated with file extensions
+as well as other options for how to resolve the MIME type of a file (like the
+default type to use for an unknown file extension).
+
+## Error-handling
+
+By default when no `error` listeners are present an automatic response will be
+made, otherwise you have full control over the response, aka you may show a 5xx
+page etc.
+
+## Caching
+
+It does _not_ perform internal caching, you should use a reverse proxy cache
+such as Varnish for this, or those fancy things called CDNs. If your
+application is small enough that it would benefit from single-node memory
+caching, it's small enough that it does not need caching at all ;).
+
+## Debugging
+
+To enable `debug()` instrumentation output export __DEBUG__:
+
+```
+$ DEBUG=send node app
+```
+
+## Running tests
+
+```
+$ npm install
+$ npm test
+```
 
 ## Examples
 
-### Simple Express example
+### Serve a specific file
+
+This simple example will send a specific file to all requests.
 
 ```js
-var contentType = require('content-type')
-var express = require('express')
-var getRawBody = require('raw-body')
-
-var app = express()
-
-app.use(function (req, res, next) {
-  getRawBody(req, {
-    length: req.headers['content-length'],
-    limit: '1mb',
-    encoding: contentType.parse(req).parameters.charset
-  }, function (err, string) {
-    if (err) return next(err)
-    req.text = string
-    next()
-  })
-})
-
-// now access req.text
-```
-
-### Simple Koa example
-
-```js
-var contentType = require('content-type')
-var getRawBody = require('raw-body')
-var koa = require('koa')
-
-var app = koa()
-
-app.use(function * (next) {
-  this.text = yield getRawBody(this.req, {
-    length: this.req.headers['content-length'],
-    limit: '1mb',
-    encoding: contentType.parse(this.req).parameters.charset
-  })
-  yield next
-})
-
-// now access this.text
-```
-
-### Using as a promise
-
-To use this library as a promise, simply omit the `callback` and a promise is
-returned, provided that a global `Promise` is defined.
-
-```js
-var getRawBody = require('raw-body')
 var http = require('http')
+var send = require('send')
 
-var server = http.createServer(function (req, res) {
-  getRawBody(req)
-    .then(function (buf) {
-      res.statusCode = 200
-      res.end(buf.length + ' bytes submitted')
-    })
-    .catch(function (err) {
-      res.statusCode = 500
-      res.end(err.message)
-    })
+var server = http.createServer(function onRequest (req, res) {
+  send(req, '/path/to/index.html')
+    .pipe(res)
 })
 
 server.listen(3000)
 ```
 
-### Using with TypeScript
+### Serve all files from a directory
 
-```ts
-import * as getRawBody from 'raw-body';
-import * as http from 'http';
+This simple example will just serve up all the files in a
+given directory as the top-level. For example, a request
+`GET /foo.txt` will send back `/www/public/foo.txt`.
 
-const server = http.createServer((req, res) => {
-  getRawBody(req)
-  .then((buf) => {
-    res.statusCode = 200;
-    res.end(buf.length + ' bytes submitted');
+```js
+var http = require('http')
+var parseUrl = require('parseurl')
+var send = require('send')
+
+var server = http.createServer(function onRequest (req, res) {
+  send(req, parseUrl(req).pathname, { root: '/www/public' })
+    .pipe(res)
+})
+
+server.listen(3000)
+```
+
+### Custom file types
+
+```js
+var http = require('http')
+var parseUrl = require('parseurl')
+var send = require('send')
+
+// Default unknown types to text/plain
+send.mime.default_type = 'text/plain'
+
+// Add a custom type
+send.mime.define({
+  'application/x-my-type': ['x-mt', 'x-mtt']
+})
+
+var server = http.createServer(function onRequest (req, res) {
+  send(req, parseUrl(req).pathname, { root: '/www/public' })
+    .pipe(res)
+})
+
+server.listen(3000)
+```
+
+### Custom directory index view
+
+This is a example of serving up a structure of directories with a
+custom function to render a listing of a directory.
+
+```js
+var http = require('http')
+var fs = require('fs')
+var parseUrl = require('parseurl')
+var send = require('send')
+
+// Transfer arbitrary files from within /www/example.com/public/*
+// with a custom handler for directory listing
+var server = http.createServer(function onRequest (req, res) {
+  send(req, parseUrl(req).pathname, { index: false, root: '/www/public' })
+    .once('directory', directory)
+    .pipe(res)
+})
+
+server.listen(3000)
+
+// Custom directory handler
+function directory (res, path) {
+  var stream = this
+
+  // redirect to trailing slash for consistent url
+  if (!stream.hasTrailingSlash()) {
+    return stream.redirect(path)
+  }
+
+  // get directory list
+  fs.readdir(path, function onReaddir (err, list) {
+    if (err) return stream.error(err)
+
+    // render an index for the directory
+    res.setHeader('Content-Type', 'text/plain; charset=UTF-8')
+    res.end(list.join('\n') + '\n')
   })
-  .catch((err) => {
-    res.statusCode = err.statusCode;
-    res.end(err.message);
-  });
-});
+}
+```
 
-server.listen(3000);
+### Serving from a root directory with custom error-handling
+
+```js
+var http = require('http')
+var parseUrl = require('parseurl')
+var send = require('send')
+
+var server = http.createServer(function onRequest (req, res) {
+  // your custom error-handling logic:
+  function error (err) {
+    res.statusCode = err.status || 500
+    res.end(err.message)
+  }
+
+  // your custom headers
+  function headers (res, path, stat) {
+    // serve all files for download
+    res.setHeader('Content-Disposition', 'attachment')
+  }
+
+  // your custom directory handling logic:
+  function redirect () {
+    res.statusCode = 301
+    res.setHeader('Location', req.url + '/')
+    res.end('Redirecting to ' + req.url + '/')
+  }
+
+  // transfer arbitrary files from within
+  // /www/example.com/public/*
+  send(req, parseUrl(req).pathname, { root: '/www/public' })
+    .on('error', error)
+    .on('directory', redirect)
+    .on('headers', headers)
+    .pipe(res)
+})
+
+server.listen(3000)
 ```
 
 ## License
 
 [MIT](LICENSE)
 
-[npm-image]: https://img.shields.io/npm/v/raw-body.svg
-[npm-url]: https://npmjs.org/package/raw-body
-[node-version-image]: https://img.shields.io/node/v/raw-body.svg
-[node-version-url]: https://nodejs.org/en/download/
-[coveralls-image]: https://img.shields.io/coveralls/stream-utils/raw-body/master.svg
-[coveralls-url]: https://coveralls.io/r/stream-utils/raw-body?branch=master
-[downloads-image]: https://img.shields.io/npm/dm/raw-body.svg
-[downloads-url]: https://npmjs.org/package/raw-body
-[github-actions-ci-image]: https://img.shields.io/github/actions/workflow/status/stream-utils/raw-body/ci.yml?branch=master&label=ci
-[github-actions-ci-url]: https://github.com/jshttp/stream-utils/raw-body?query=workflow%3Aci
+[appveyor-image]: https://badgen.net/appveyor/ci/dougwilson/send/master?label=windows
+[appveyor-url]: https://ci.appveyor.com/project/dougwilson/send
+[coveralls-image]: https://badgen.net/coveralls/c/github/pillarjs/send/master
+[coveralls-url]: https://coveralls.io/r/pillarjs/send?branch=master
+[github-actions-ci-image]: https://badgen.net/github/checks/pillarjs/send/master?label=linux
+[github-actions-ci-url]: https://github.com/pillarjs/send/actions/workflows/ci.yml
+[node-image]: https://badgen.net/npm/node/send
+[node-url]: https://nodejs.org/en/download/
+[npm-downloads-image]: https://badgen.net/npm/dm/send
+[npm-url]: https://npmjs.org/package/send
+[npm-version-image]: https://badgen.net/npm/v/send

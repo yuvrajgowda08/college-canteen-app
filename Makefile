@@ -1,19 +1,8 @@
-TESTS = test/*.js
 
-all: test
+test:
+	@./node_modules/.bin/mocha \
+		--require should \
+		--reporter spec \
+		--bail
 
-build: clean compile
-
-compile:
-	npm install .
-	npm run install
-
-test: build
-	@./node_modules/nodeunit/bin/nodeunit \
-		$(TESTS)
-
-clean:
-	rm -Rf lib/bindings/
-
-
-.PHONY: clean test build
+.PHONY: test

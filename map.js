@@ -1,30 +1,39 @@
-'use strict';
+var concatMap = require('../');
+var test = require('tape');
 
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.default = _asyncMap;
-
-var _wrapAsync = require('./wrapAsync.js');
-
-var _wrapAsync2 = _interopRequireDefault(_wrapAsync);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _asyncMap(eachfn, arr, iteratee, callback) {
-    arr = arr || [];
-    var results = [];
-    var counter = 0;
-    var _iteratee = (0, _wrapAsync2.default)(iteratee);
-
-    return eachfn(arr, (value, _, iterCb) => {
-        var index = counter++;
-        _iteratee(value, (err, v) => {
-            results[index] = v;
-            iterCb(err);
-        });
-    }, err => {
-        callback(err, results);
+test('empty or not', function (t) {
+    var xs = [ 1, 2, 3, 4, 5, 6 ];
+    var ixes = [];
+    var ys = concatMap(xs, function (x, ix) {
+        ixes.push(ix);
+        return x % 2 ? [ x - 0.1, x, x + 0.1 ] : [];
     });
-}
-module.exports = exports.default;
+    t.same(ys, [ 0.9, 1, 1.1, 2.9, 3, 3.1, 4.9, 5, 5.1 ]);
+    t.same(ixes, [ 0, 1, 2, 3, 4, 5 ]);
+    t.end();
+});
+
+test('always something', function (t) {
+    var xs = [ 'a', 'b', 'c', 'd' ];
+    var ys = concatMap(xs, function (x) {
+        return x === 'b' ? [ 'B', 'B', 'B' ] : [ x ];
+    });
+    t.same(ys, [ 'a', 'B', 'B', 'B', 'c', 'd' ]);
+    t.end();
+});
+
+test('scalars', function (t) {
+    var xs = [ 'a', 'b', 'c', 'd' ];
+    var ys = concatMap(xs, function (x) {
+        return x === 'b' ? [ 'B', 'B', 'B' ] : x;
+    });
+    t.same(ys, [ 'a', 'B', 'B', 'B', 'c', 'd' ]);
+    t.end();
+});
+
+test('undefs', function (t) {
+    var xs = [ 'a', 'b', 'c', 'd' ];
+    var ys = concatMap(xs, function () {});
+    t.same(ys, [ undefined, undefined, undefined, undefined ]);
+    t.end();
+});
